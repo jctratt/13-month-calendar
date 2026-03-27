@@ -1,0 +1,87 @@
+:root {
+  --bg: #f5ecdd;
+  --bg-deep: #e4d1b1;
+  --panel: rgba(255, 252, 247, 0.9);
+  --tile-bg: rgba(255, 247, 236, 0.94);
+  --button-bg: rgba(255, 245, 227, 0.92);
+  --button-hover: rgba(255, 236, 205, 0.98);
+  --text: #5d4b39;
+  --text-strong: #2e2012;
+  --muted: #786451;
+  --accent-strong: #9a6025;
+  --border: rgba(107, 78, 42, 0.2);
+  --border-soft: rgba(107, 78, 42, 0.12);
+  --shadow: 0 28px 60px rgba(88, 55, 19, 0.12);
+  --display: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+  --sans: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', sans-serif;
+
+  color: var(--text);
+  font: 17px/1.5 var(--sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 247, 220, 0.96), rgba(255, 247, 220, 0) 33%),
+    radial-gradient(circle at top right, rgba(228, 191, 129, 0.28), rgba(228, 191, 129, 0) 32%),
+    linear-gradient(180deg, var(--bg), #f8f0e5 28%, #f1e3cb 100%);
+}
+
+#root {
+  max-width: 1440px;
+  margin: 0 auto;
+  min-height: 100svh;
+  padding: 2rem;
+}
+
+h1,
+h2,
+h3 {
+  color: var(--text-strong);
+  font-family: var(--display);
+  font-weight: 700;
+}
+
+h1 {
+  font-size: clamp(2.8rem, 5vw, 4.75rem);
+  line-height: 0.96;
+  letter-spacing: -0.04em;
+  margin: 0.2rem 0 1rem;
+  max-width: 11ch;
+}
+
+h2 {
+  font-size: clamp(1.6rem, 2vw, 2rem);
+  line-height: 1.05;
+}
+
+h3 {
+  font-size: 1.6rem;
+}
+
+p {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  :root {
+    font-size: 16px;
+  }
+
+  #root {
+    padding: 1rem;
+  }
+}
