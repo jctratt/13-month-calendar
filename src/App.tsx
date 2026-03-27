@@ -207,9 +207,10 @@ function App() {
           <h1>Equal months, real dates, no fake rewrites.</h1>
           <p className="hero-panel__lede">
             The regular year is remapped into thirteen fixed 28-day months. Real Gregorian
-            dates stay visible on every tile, while Feb 29 and Dec 31 remain standalone
-            Gregorian-only days outside the grid. Each fixed month starts in the first box,
-            while the weekday strip rotates to match the real weekday of Jan 1 for that year.
+            dates stay visible on every tile. Feb 29 stays inside the running sequence in leap
+            years, while year-end standalone days sit outside the grid so the 13 fixed months
+            keep their shape. Each fixed month starts in the first box, while the weekday strip
+            rotates to match the real weekday of Jan 1 for that year.
           </p>
           <div className="hero-panel__note" aria-label="Weekday orientation note">
             Weekday columns shift year to year. In this layout, Jan 1 always starts in the

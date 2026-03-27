@@ -1,4 +1,4 @@
-export type SpecialDayType = 'leap-day' | 'solar-day'
+export type SpecialDayType = 'year-bridge-day' | 'solar-day'
 
 export interface FixedDay {
   isoDate: string
@@ -68,12 +68,13 @@ export function isLeapYear(year: number) {
 function isSpecialDay(date: Date) {
   const month = date.getMonth()
   const day = date.getDate()
+  const year = date.getFullYear()
 
   if (month === 11 && day === 31) {
     return true
   }
 
-  return month === 1 && day === 29
+  return isLeapYear(year) && month === 11 && day === 30
 }
 
 function buildRegularDates(year: number) {
@@ -140,21 +141,21 @@ export function buildFixedCalendarYear(year: number, today = new Date()): FixedC
   const specialDays: SpecialDay[] = []
 
   if (isLeapYear(year)) {
-    const leapDay = createDate(year, 1, 29)
+    const bridgeDay = createDate(year, 11, 30)
     specialDays.push({
-      type: 'leap-day',
-      label: 'Leap Day',
-      description: 'Gregorian-only day outside the 13-month grid.',
+      type: 'year-bridge-day',
+      label: 'Year Bridge Day',
+      description: 'Leap-year balancing day outside the fixed months.',
       historicalContext:
-        'Leap Day carries the old intercalation job: it keeps the civil year aligned to the sun, a role inherited through Julian and Gregorian calendar reform.',
+        'This extra year-end bridge preserves the 13 fixed 28-day months while still honoring the extra solar day accumulated in leap years.',
       celebrationIdea:
-        'Treat it like a calendar-maker\'s festival day: a bonus day for adjustment, experiment, and play before the regular cycle resumes.',
-      isoDate: toIsoDate(leapDay),
-      date: leapDay,
-      gregorianMonth: GREGORIAN_MONTHS[leapDay.getMonth()],
-      gregorianDay: leapDay.getDate(),
-      weekdayLabel: WEEKDAYS[leapDay.getDay()],
-      isToday: isSameDate(leapDay, today),
+        'Use it as a leap-year threshold festival: a pause for reflection, extra rest, and seasonal adjustment before the solar year closes.',
+      isoDate: toIsoDate(bridgeDay),
+      date: bridgeDay,
+      gregorianMonth: GREGORIAN_MONTHS[bridgeDay.getMonth()],
+      gregorianDay: bridgeDay.getDate(),
+      weekdayLabel: WEEKDAYS[bridgeDay.getDay()],
+      isToday: isSameDate(bridgeDay, today),
     })
   }
 

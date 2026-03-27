@@ -22,16 +22,6 @@
   overflow: hidden;
 }
 
-.hero-panel::after {
-  content: '';
-  position: absolute;
-  inset: auto -12% -35% auto;
-  width: 22rem;
-  aspect-ratio: 1;
-  background: radial-gradient(circle, rgba(226, 160, 78, 0.34), rgba(226, 160, 78, 0));
-  pointer-events: none;
-}
-
 .hero-panel__copy,
 .hero-panel__controls,
 .special-days-panel__header {
