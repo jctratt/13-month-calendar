@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import {
   buildFixedCalendarYear,
@@ -10,54 +10,87 @@ import {
 const TODAY = new Date()
 const WEEKDAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-function MonthPanel({ month }: { month: FixedMonth }) {
-  const leadingPads = month.days[0]?.weekday ?? 0
-  const trailingPads = month.days.length === 0 ? 0 : 6 - month.days[month.days.length - 1].weekday
+type ScrollTarget =
+  | {
+      kind: 'month'
+      monthIndex: number
+    }
+  | {
+      kind: 'special-days'
+    }
 
+function rotateWeekdays(startWeekday: number) {
+  return WEEKDAY_HEADERS.map((_, index) => WEEKDAY_HEADERS[(startWeekday + index) % 7])
+}
+
+function isWeekendLabel(weekday: string) {
+  return weekday === 'Sat' || weekday === 'Sun'
+}
+
+function MonthPanel({
+  month,
+  weekdayHeaders,
+  monthRef,
+  onJumpToTop,
+}: {
+  month: FixedMonth
+  weekdayHeaders: string[]
+  monthRef?: (element: HTMLElement | null) => void
+  onJumpToTop: () => void
+}) {
   return (
-    <section className="month-card" aria-labelledby={`month-${month.index}`}>
+    <section
+      ref={monthRef}
+      className="month-card"
+      aria-labelledby={`month-${month.index}`}
+      id={`month-panel-${month.index}`}
+    >
       <div className="month-card__header">
-        <p className="month-card__eyebrow">Fixed Month {month.index}</p>
-        <h2 id={`month-${month.index}`}>{month.label}</h2>
-        <p className="month-card__range">{month.rangeLabel}</p>
+        <div className="month-card__heading-row">
+          <div>
+            <p className="month-card__eyebrow">Fixed Month {month.index}</p>
+            <h2 id={`month-${month.index}`}>{month.label}</h2>
+            <p className="month-card__range">{month.rangeLabel}</p>
+          </div>
+          <button type="button" className="month-card__top-button" onClick={onJumpToTop}>
+            Jump to Top
+          </button>
+        </div>
       </div>
 
       <div className="weekday-strip" aria-hidden="true">
-        {WEEKDAY_HEADERS.map((weekday) => (
-          <span key={`${month.index}-${weekday}`}>{weekday}</span>
+        {weekdayHeaders.map((weekday) => (
+          <span
+            key={`${month.index}-${weekday}`}
+            className={isWeekendLabel(weekday) ? 'weekday-strip__weekend' : ''}
+          >
+            <span className="weekday-strip__label">{weekday}</span>
+          </span>
         ))}
       </div>
 
       <div className="day-grid">
-        {Array.from({ length: leadingPads }, (_, index) => (
-          <span
-            key={`leading-${month.index}-${index}`}
-            className="day-grid__pad"
-            aria-hidden="true"
-          />
-        ))}
+        {month.days.map((day, dayIndex) => {
+          const usesAlternateMonthColor = day.date.getMonth() % 2 === 1
+          const previousDay = month.days[dayIndex - 1]
+          const startsGregorianMonthSegment =
+            dayIndex > 0 && previousDay.date.getMonth() !== day.date.getMonth()
 
-        {month.days.map((day) => (
-          <article
-            key={day.isoDate}
-            className={`day-tile${day.isToday ? ' day-tile--today' : ''}`}
-            aria-label={`Fixed month ${month.index}, day ${day.fixedDay}. ${day.gregorianMonth} ${day.gregorianDay}, ${day.weekdayLabel}.`}
-          >
-            <span className="day-tile__fixed">{day.fixedDay}</span>
-            <span className="day-tile__gregorian">{day.gregorianDay}</span>
-            <span className="day-tile__meta">
-              {day.gregorianMonth} · {day.weekdayLabel}
-            </span>
-          </article>
-        ))}
-
-        {Array.from({ length: trailingPads }, (_, index) => (
-          <span
-            key={`trailing-${month.index}-${index}`}
-            className="day-grid__pad"
-            aria-hidden="true"
-          />
-        ))}
+          return (
+            <article
+              key={day.isoDate}
+              className={`day-tile${usesAlternateMonthColor ? ' day-tile--month-b' : ' day-tile--month-a'}${startsGregorianMonthSegment ? ' day-tile--month-shift' : ''}${day.isToday ? ' day-tile--today' : ''}${isWeekendLabel(day.weekdayLabel) ? ' day-tile--weekend' : ''}`}
+              aria-label={`Fixed month ${month.index}, day ${day.fixedDay}. ${day.gregorianMonth} ${day.gregorianDay}, ${day.weekdayLabel}.`}
+            >
+              <div className="day-tile__top">
+                <span className="day-tile__fixed">{day.fixedDay}</span>
+                {day.isToday ? <span className="day-tile__badge">Today</span> : null}
+              </div>
+              <span className="day-tile__gregorian">{day.gregorianDay}</span>
+              <span className="day-tile__meta">{day.gregorianMonth}</span>
+            </article>
+          )
+        })}
       </div>
     </section>
   )
@@ -72,6 +105,14 @@ function SpecialDayCard({ day }: { day: SpecialDay }) {
       </h3>
       <p className="special-card__meta">{day.weekdayLabel}</p>
       <p>{day.description}</p>
+      <div className="special-card__details">
+        <p>
+          <strong>Historical context:</strong> {day.historicalContext}
+        </p>
+        <p>
+          <strong>Celebration idea:</strong> {day.celebrationIdea}
+        </p>
+      </div>
     </article>
   )
 }
@@ -96,24 +137,118 @@ function describeToday(selectedYear: number) {
 
 function App() {
   const [selectedYear, setSelectedYear] = useState(TODAY.getFullYear())
+  const topRef = useRef<HTMLElement | null>(null)
+  const monthRefs = useRef<Record<number, HTMLElement | null>>({})
+  const pendingScrollTargetRef = useRef<ScrollTarget | null>(null)
+  const specialDaysRef = useRef<HTMLElement | null>(null)
   const calendarYear = buildFixedCalendarYear(selectedYear, TODAY)
   const regularDayCount = calendarYear.months.length * 28
+  const weekdayHeaders = rotateWeekdays(calendarYear.months[0]?.days[0]?.weekday ?? 0)
+
+  function jumpToMonth(monthIndex: number) {
+    monthRefs.current[monthIndex]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  function jumpToSpecialDays() {
+    specialDaysRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  function jumpToTop() {
+    topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  function handleJumpToToday() {
+    const todayCalendar =
+      selectedYear === TODAY.getFullYear()
+        ? calendarYear
+        : buildFixedCalendarYear(TODAY.getFullYear(), TODAY)
+    const placement = findTodayPlacement(todayCalendar)
+
+    if (!placement) {
+      return
+    }
+
+    if (selectedYear !== TODAY.getFullYear()) {
+      pendingScrollTargetRef.current =
+        placement.kind === 'fixed-day'
+          ? { kind: 'month', monthIndex: placement.month.index }
+          : { kind: 'special-days' }
+      setSelectedYear(TODAY.getFullYear())
+      return
+    }
+
+    if (placement.kind === 'fixed-day') {
+      jumpToMonth(placement.month.index)
+      return
+    }
+
+    jumpToSpecialDays()
+  }
+
+  useEffect(() => {
+    if (!pendingScrollTargetRef.current) {
+      return
+    }
+
+    if (pendingScrollTargetRef.current.kind === 'month') {
+      jumpToMonth(pendingScrollTargetRef.current.monthIndex)
+    } else {
+      jumpToSpecialDays()
+    }
+
+    pendingScrollTargetRef.current = null
+  }, [selectedYear])
 
   return (
     <main className="app-shell">
-      <section className="hero-panel">
+      <section ref={topRef} className="hero-panel">
         <div className="hero-panel__copy">
-          <p className="eyebrow">13-Month Solar Calendar</p>
+          <p className="eyebrow">13-Month Lunar-Solar Calendar</p>
           <h1>Equal months, real dates, no fake rewrites.</h1>
           <p className="hero-panel__lede">
             The regular year is remapped into thirteen fixed 28-day months. Real Gregorian
             dates stay visible on every tile, while Feb 29 and Dec 31 remain standalone
-            Gregorian-only days outside the grid. The layout keeps real weekday alignment,
-            so Jan 1, 2026 still lands on Thursday and Mar 27, 2026 still lands on Friday.
+            Gregorian-only days outside the grid. Each fixed month starts in the first box,
+            while the weekday strip rotates to match the real weekday of Jan 1 for that year.
           </p>
+          <div className="hero-panel__note" aria-label="Weekday orientation note">
+            Weekday columns shift year to year. In this layout, Jan 1 always starts in the
+            first box, so the weekday row rotates with the selected year instead of staying
+            in the usual Sunday-to-Saturday order.
+          </div>
         </div>
 
         <div className="hero-panel__controls">
+          <div className="month-jump" aria-label="Jump to a fixed month">
+            <label className="month-jump__label" htmlFor="month-jump-select">
+              Jump to month
+            </label>
+            <select
+              id="month-jump-select"
+              defaultValue=""
+              onChange={(event) => {
+                const value = Number(event.target.value)
+
+                if (!Number.isNaN(value)) {
+                  jumpToMonth(value)
+                }
+              }}
+            >
+              <option value="" disabled>
+                Select a fixed month
+              </option>
+              {calendarYear.months.map((month) => (
+                <option key={month.index} value={month.index}>
+                  {`Month ${month.index} · ${month.rangeLabel}`}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button type="button" className="jump-today-button" onClick={handleJumpToToday}>
+            Jump to Today
+          </button>
+
           <div className="year-switcher" aria-label="Year controls">
             <button type="button" onClick={() => setSelectedYear((year) => year - 1)}>
               Previous Year
@@ -138,7 +273,7 @@ function App() {
         </article>
         <article>
           <p className="overview-strip__value">28</p>
-          <p>days per month, aligned against the real Gregorian weekdays</p>
+          <p>days per month, kept as four exact weeks with year-specific weekday order</p>
         </article>
         <article>
           <p className="overview-strip__value">{calendarYear.specialDays.length}</p>
@@ -148,11 +283,23 @@ function App() {
 
       <section className="calendar-grid" aria-label={`Fixed calendar for ${selectedYear}`}>
         {calendarYear.months.map((month) => (
-          <MonthPanel key={month.index} month={month} />
+          <MonthPanel
+            key={month.index}
+            month={month}
+            weekdayHeaders={weekdayHeaders}
+            onJumpToTop={jumpToTop}
+            monthRef={(element) => {
+              monthRefs.current[month.index] = element
+            }}
+          />
         ))}
       </section>
 
-      <section className="special-days-panel" aria-labelledby="special-days-heading">
+      <section
+        ref={specialDaysRef}
+        className="special-days-panel"
+        aria-labelledby="special-days-heading"
+      >
         <div className="special-days-panel__header">
           <p className="eyebrow">Standalone Days</p>
           <h2 id="special-days-heading">Gregorian-only days outside the fixed months</h2>

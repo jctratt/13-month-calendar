@@ -23,6 +23,8 @@ export interface SpecialDay {
   type: SpecialDayType
   label: string
   description: string
+  historicalContext: string
+  celebrationIdea: string
   isoDate: string
   date: Date
   gregorianMonth: string
@@ -143,6 +145,10 @@ export function buildFixedCalendarYear(year: number, today = new Date()): FixedC
       type: 'leap-day',
       label: 'Leap Day',
       description: 'Gregorian-only day outside the 13-month grid.',
+      historicalContext:
+        'Leap Day carries the old intercalation job: it keeps the civil year aligned to the sun, a role inherited through Julian and Gregorian calendar reform.',
+      celebrationIdea:
+        'Treat it like a calendar-maker\'s festival day: a bonus day for adjustment, experiment, and play before the regular cycle resumes.',
       isoDate: toIsoDate(leapDay),
       date: leapDay,
       gregorianMonth: GREGORIAN_MONTHS[leapDay.getMonth()],
@@ -157,6 +163,10 @@ export function buildFixedCalendarYear(year: number, today = new Date()): FixedC
     type: 'solar-day',
     label: 'Solar Day',
     description: 'Year-closing Gregorian-only day outside the fixed months.',
+    historicalContext:
+      'A standalone year-end day echoes perennial calendar proposals such as the International Fixed Calendar, where an extra day sits outside the monthly count to keep the seasons anchored.',
+    celebrationIdea:
+      'Use it as a solar new-year eve: a harvest-close, reflection, and reset day before month 1 begins again.',
     isoDate: toIsoDate(solarDay),
     date: solarDay,
     gregorianMonth: GREGORIAN_MONTHS[solarDay.getMonth()],
