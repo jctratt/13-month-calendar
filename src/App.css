@@ -30,6 +30,7 @@
 }
 
 .hero-panel__lede,
+.hero-panel__holiday-note,
 .status-card,
 .special-days-panel__header p,
 .special-card p,
@@ -47,6 +48,11 @@
   background: rgba(255, 247, 236, 0.82);
   color: rgba(83, 56, 25, 0.9);
   line-height: 1.55;
+}
+
+.hero-panel__holiday-note {
+  margin: 0.8rem 0 0;
+  font-size: 0.92rem;
 }
 
 .hero-panel__controls {
@@ -343,13 +349,13 @@ button:focus-visible {
 
 .day-tile {
   position: relative;
-  min-height: 5.8rem;
+  min-height: 6.1rem;
   padding: 0.65rem 0.55rem 0.6rem;
   border-radius: 18px;
   border: 1px solid rgba(147, 109, 63, 0.08);
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  row-gap: 0.4rem;
+  grid-template-rows: auto 1fr auto auto;
+  row-gap: 0.28rem;
 }
 
 .day-tile--month-a {
@@ -388,6 +394,10 @@ button:focus-visible {
   background: linear-gradient(180deg, rgba(118, 60, 12, 0.95), rgba(166, 92, 25, 0.92));
   border-color: rgba(88, 41, 5, 0.64);
   box-shadow: 0 14px 28px rgba(85, 44, 12, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.day-tile--holiday {
+  box-shadow: inset 0 0 0 1px rgba(187, 127, 47, 0.16);
 }
 
 .day-tile__badge {
@@ -442,10 +452,33 @@ button:focus-visible {
   line-height: 1;
 }
 
+.day-tile__holiday {
+  justify-self: center;
+  max-width: 100%;
+  padding: 0.18rem 0.42rem;
+  border-radius: 999px;
+  background: rgba(245, 225, 187, 0.55);
+  color: var(--accent-strong);
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .day-tile--today .day-tile__fixed,
 .day-tile--today .day-tile__gregorian,
-.day-tile--today .day-tile__meta {
+.day-tile--today .day-tile__meta,
+.day-tile--today .day-tile__holiday {
   color: #fff7eb;
+}
+
+.day-tile--today .day-tile__holiday {
+  background: rgba(255, 246, 231, 0.18);
+  border: 1px solid rgba(255, 233, 200, 0.24);
 }
 
 .special-days-panel {
@@ -472,6 +505,13 @@ button:focus-visible {
   margin-top: 0.9rem;
   padding-top: 0.9rem;
   border-top: 1px solid rgba(116, 78, 37, 0.12);
+}
+
+.special-card__holiday {
+  margin: 0 0 0.35rem;
+  color: var(--accent-strong);
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 .special-card__details p {

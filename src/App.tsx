@@ -27,6 +27,22 @@ function isWeekendLabel(weekday: string) {
   return weekday === 'Sat' || weekday === 'Sun'
 }
 
+function describeStandaloneWindow(days: SpecialDay[]) {
+  if (days.length === 1) {
+    return 'Dec 31'
+  }
+
+  return 'Dec 30-31'
+}
+
+function describeStandaloneDays(days: SpecialDay[]) {
+  if (days.length === 1) {
+    return 'year-end Gregorian-only day outside the fixed months'
+  }
+
+  return 'year-end Gregorian-only days outside the fixed months'
+}
+
 function MonthPanel({
   month,
   weekdayHeaders,
@@ -79,8 +95,8 @@ function MonthPanel({
           return (
             <article
               key={day.isoDate}
-              className={`day-tile${usesAlternateMonthColor ? ' day-tile--month-b' : ' day-tile--month-a'}${startsGregorianMonthSegment ? ' day-tile--month-shift' : ''}${day.isToday ? ' day-tile--today' : ''}${isWeekendLabel(day.weekdayLabel) ? ' day-tile--weekend' : ''}`}
-              aria-label={`Fixed month ${month.index}, day ${day.fixedDay}. ${day.gregorianMonth} ${day.gregorianDay}, ${day.weekdayLabel}.`}
+              className={`day-tile${usesAlternateMonthColor ? ' day-tile--month-b' : ' day-tile--month-a'}${startsGregorianMonthSegment ? ' day-tile--month-shift' : ''}${day.holiday ? ' day-tile--holiday' : ''}${day.isToday ? ' day-tile--today' : ''}${isWeekendLabel(day.weekdayLabel) ? ' day-tile--weekend' : ''}`}
+              aria-label={`Fixed month ${month.index}, day ${day.fixedDay}. ${day.gregorianMonth} ${day.gregorianDay}, ${day.weekdayLabel}.${day.holiday ? ` Holiday: ${day.holiday.name}.` : ''}`}
             >
               <div className="day-tile__top">
                 <span className="day-tile__fixed">{day.fixedDay}</span>
@@ -88,6 +104,11 @@ function MonthPanel({
               </div>
               <span className="day-tile__gregorian">{day.gregorianDay}</span>
               <span className="day-tile__meta">{day.gregorianMonth}</span>
+              {day.holiday ? (
+                <span className="day-tile__holiday" title={day.holiday.name}>
+                  {day.holiday.shortLabel}
+                </span>
+              ) : null}
             </article>
           )
         })}
@@ -100,6 +121,7 @@ function SpecialDayCard({ day }: { day: SpecialDay }) {
   return (
     <article className={`special-card special-card--${day.type}`}>
       <p className="special-card__eyebrow">{day.label}</p>
+      {day.holiday ? <p className="special-card__holiday">{day.holiday.name}</p> : null}
       <h3>
         {day.gregorianMonth} {day.gregorianDay}
       </h3>
@@ -142,7 +164,7 @@ function App() {
   const pendingScrollTargetRef = useRef<ScrollTarget | null>(null)
   const specialDaysRef = useRef<HTMLElement | null>(null)
   const calendarYear = buildFixedCalendarYear(selectedYear, TODAY)
-  const regularDayCount = calendarYear.months.length * 28
+  const regularDayCount = calendarYear.months.reduce((sum, month) => sum + month.days.length, 0)
   const weekdayHeaders = rotateWeekdays(calendarYear.months[0]?.days[0]?.weekday ?? 0)
 
   function jumpToMonth(monthIndex: number) {
@@ -207,10 +229,13 @@ function App() {
           <h1>Equal months, real dates, no fake rewrites.</h1>
           <p className="hero-panel__lede">
             The regular year is remapped into thirteen fixed 28-day months. Real Gregorian
-            dates stay visible on every tile. Feb 29 stays inside the running sequence in leap
-            years, while year-end standalone days sit outside the grid so the 13 fixed months
-            keep their shape. Each fixed month starts in the first box, while the weekday strip
-            rotates to match the real weekday of Jan 1 for that year.
+            dates stay visible on every tile. Feb 29 stays inside the running sequence, while
+            Dec 31 always remains outside the grid and Dec 30 joins it in leap years. Each
+            fixed month starts in the first box, while the weekday strip rotates to match the
+            real weekday of Jan 1 for that year.
+          </p>
+          <p className="hero-panel__holiday-note">
+            Common U.S. holidays are lightly highlighted on their real Gregorian dates.
           </p>
           <div className="hero-panel__note" aria-label="Weekday orientation note">
             Weekday columns shift year to year. In this layout, Jan 1 always starts in the
@@ -277,8 +302,10 @@ function App() {
           <p>days per month, kept as four exact weeks with year-specific weekday order</p>
         </article>
         <article>
-          <p className="overview-strip__value">{calendarYear.specialDays.length}</p>
-          <p>standalone Gregorian-only day{calendarYear.specialDays.length > 1 ? 's' : ''}</p>
+          <p className="overview-strip__value">
+            {describeStandaloneWindow(calendarYear.specialDays)}
+          </p>
+          <p>{describeStandaloneDays(calendarYear.specialDays)}</p>
         </article>
       </section>
 
@@ -302,11 +329,18 @@ function App() {
         aria-labelledby="special-days-heading"
       >
         <div className="special-days-panel__header">
-          <p className="eyebrow">Standalone Days</p>
-          <h2 id="special-days-heading">Gregorian-only days outside the fixed months</h2>
+          <p className="eyebrow">
+            {calendarYear.specialDays.length === 1 ? 'Standalone Day' : 'Standalone Days'}
+          </p>
+          <h2 id="special-days-heading">
+            {calendarYear.specialDays.length === 1
+              ? 'Gregorian-only day outside the fixed months'
+              : 'Gregorian-only days outside the fixed months'}
+          </h2>
           <p>
-            These dates keep their real Gregorian identity and do not consume a tile in the
-            13-month grid.
+            {calendarYear.specialDays.length === 1
+              ? 'This date keeps its real Gregorian identity and does not consume a tile in the 13-month grid.'
+              : 'These dates keep their real Gregorian identity and do not consume tiles in the 13-month grid.'}
           </p>
         </div>
 

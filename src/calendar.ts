@@ -1,4 +1,9 @@
-export type SpecialDayType = 'year-bridge-day' | 'solar-day'
+export type SpecialDayType = 'solar-day'
+
+export interface Holiday {
+  name: string
+  shortLabel: string
+}
 
 export interface FixedDay {
   isoDate: string
@@ -9,6 +14,7 @@ export interface FixedDay {
   gregorianDay: number
   weekday: number
   weekdayLabel: string
+  holiday: Holiday | null
   isToday: boolean
 }
 
@@ -30,6 +36,7 @@ export interface SpecialDay {
   gregorianMonth: string
   gregorianDay: number
   weekdayLabel: string
+  holiday: Holiday | null
   isToday: boolean
 }
 
@@ -61,20 +68,64 @@ function toIsoDate(date: Date) {
   return `${date.getFullYear()}-${month}-${day}`
 }
 
+function getNthWeekdayOfMonth(
+  year: number,
+  month: number,
+  weekday: number,
+  occurrence: number,
+) {
+  const firstDay = createDate(year, month, 1)
+  const firstWeekdayOffset = (weekday - firstDay.getDay() + 7) % 7
+
+  return 1 + firstWeekdayOffset + (occurrence - 1) * 7
+}
+
+function getLastWeekdayOfMonth(year: number, month: number, weekday: number) {
+  const lastDay = createDate(year, month + 1, 0)
+  const lastWeekdayOffset = (lastDay.getDay() - weekday + 7) % 7
+
+  return lastDay.getDate() - lastWeekdayOffset
+}
+
+function buildHolidayMap(year: number) {
+  const holidays = new Map<string, Holiday>()
+
+  function addHoliday(month: number, day: number, name: string, shortLabel: string) {
+    holidays.set(toIsoDate(createDate(year, month, day)), { name, shortLabel })
+  }
+
+  addHoliday(0, 1, "New Year's Day", 'New Year')
+  addHoliday(0, getNthWeekdayOfMonth(year, 0, 1, 3), 'Martin Luther King Jr. Day', 'MLK')
+  addHoliday(1, 14, "Valentine's Day", 'Valentine')
+  addHoliday(1, getNthWeekdayOfMonth(year, 1, 1, 3), "Presidents' Day", 'Pres Day')
+  addHoliday(2, 17, "St. Patrick's Day", 'St. Pat')
+  addHoliday(4, getLastWeekdayOfMonth(year, 4, 1), 'Memorial Day', 'Memorial')
+  addHoliday(5, 19, 'Juneteenth', 'June 19')
+  addHoliday(6, 4, 'Independence Day', 'July 4')
+  addHoliday(8, getNthWeekdayOfMonth(year, 8, 1, 1), 'Labor Day', 'Labor')
+  addHoliday(9, 31, 'Halloween', 'Hallows')
+  addHoliday(10, 11, 'Veterans Day', 'Veterans')
+  addHoliday(10, getNthWeekdayOfMonth(year, 10, 4, 4), 'Thanksgiving', 'Thanks')
+  addHoliday(11, 24, 'Christmas Eve', 'Xmas Eve')
+  addHoliday(11, 25, 'Christmas Day', 'Xmas')
+  addHoliday(11, 31, "New Year's Eve", 'Year End')
+
+  return holidays
+}
+
 export function isLeapYear(year: number) {
   return year % 400 === 0 || (year % 4 === 0 && year % 100 !== 0)
 }
 
-function isSpecialDay(date: Date) {
+function isSpecialDay(date: Date, year: number) {
   const month = date.getMonth()
   const day = date.getDate()
-  const year = date.getFullYear()
 
-  if (month === 11 && day === 31) {
-    return true
+  if (month !== 11) {
+    return false
   }
 
-  return isLeapYear(year) && month === 11 && day === 30
+  return day === 31 || (isLeapYear(year) && day === 30)
 }
 
 function buildRegularDates(year: number) {
@@ -82,7 +133,7 @@ function buildRegularDates(year: number) {
   const cursor = createDate(year, 0, 1)
 
   while (cursor.getFullYear() === year) {
-    if (!isSpecialDay(cursor)) {
+    if (!isSpecialDay(cursor, year)) {
       dates.push(new Date(cursor))
     }
 
@@ -112,13 +163,20 @@ function buildRangeLabel(start: Date, end: Date) {
 
 export function buildFixedCalendarYear(year: number, today = new Date()): FixedCalendarYear {
   const regularDates = buildRegularDates(year)
+  const holidayMap = buildHolidayMap(year)
+  const monthLengths = Array.from({ length: 13 }, () => 28)
+  const expectedRegularDays = monthLengths.reduce((sum, length) => sum + length, 0)
 
-  if (regularDates.length !== 364) {
-    throw new Error(`Expected 364 regular days for ${year}, received ${regularDates.length}.`)
+  if (regularDates.length !== expectedRegularDays) {
+    throw new Error(
+      `Expected ${expectedRegularDays} regular days for ${year}, received ${regularDates.length}.`,
+    )
   }
 
-  const months = Array.from({ length: 13 }, (_, index) => {
-    const days = regularDates.slice(index * 28, index * 28 + 28).map((date, dayIndex) => ({
+  let startIndex = 0
+
+  const months = monthLengths.map((monthLength, index) => {
+    const days = regularDates.slice(startIndex, startIndex + monthLength).map((date, dayIndex) => ({
       isoDate: toIsoDate(date),
       date,
       fixedMonth: index + 1,
@@ -127,8 +185,11 @@ export function buildFixedCalendarYear(year: number, today = new Date()): FixedC
       gregorianDay: date.getDate(),
       weekday: date.getDay(),
       weekdayLabel: WEEKDAYS[date.getDay()],
+      holiday: holidayMap.get(toIsoDate(date)) ?? null,
       isToday: isSameDate(date, today),
     }))
+
+    startIndex += monthLength
 
     return {
       index: index + 1,
@@ -141,21 +202,22 @@ export function buildFixedCalendarYear(year: number, today = new Date()): FixedC
   const specialDays: SpecialDay[] = []
 
   if (isLeapYear(year)) {
-    const bridgeDay = createDate(year, 11, 30)
+    const thresholdDay = createDate(year, 11, 30)
     specialDays.push({
-      type: 'year-bridge-day',
-      label: 'Year Bridge Day',
-      description: 'Leap-year balancing day outside the fixed months.',
+      type: 'solar-day',
+      label: 'Threshold Day',
+      description: 'Standalone Gregorian year-end day outside the fixed months.',
       historicalContext:
-        'This extra year-end bridge preserves the 13 fixed 28-day months while still honoring the extra solar day accumulated in leap years.',
+        'Year-end intercalary days were often treated as festival thresholds in reform calendars: time set slightly apart from the regular month count before the cycle begins again.',
       celebrationIdea:
-        'Use it as a leap-year threshold festival: a pause for reflection, extra rest, and seasonal adjustment before the solar year closes.',
-      isoDate: toIsoDate(bridgeDay),
-      date: bridgeDay,
-      gregorianMonth: GREGORIAN_MONTHS[bridgeDay.getMonth()],
-      gregorianDay: bridgeDay.getDate(),
-      weekdayLabel: WEEKDAYS[bridgeDay.getDay()],
-      isToday: isSameDate(bridgeDay, today),
+        'Use it as the first year-end gathering day: shared meals, storytelling, and a community pause before the final close of the year.',
+      isoDate: toIsoDate(thresholdDay),
+      date: thresholdDay,
+      gregorianMonth: GREGORIAN_MONTHS[thresholdDay.getMonth()],
+      gregorianDay: thresholdDay.getDate(),
+      weekdayLabel: WEEKDAYS[thresholdDay.getDay()],
+      holiday: holidayMap.get(toIsoDate(thresholdDay)) ?? null,
+      isToday: isSameDate(thresholdDay, today),
     })
   }
 
@@ -173,6 +235,7 @@ export function buildFixedCalendarYear(year: number, today = new Date()): FixedC
     gregorianMonth: GREGORIAN_MONTHS[solarDay.getMonth()],
     gregorianDay: solarDay.getDate(),
     weekdayLabel: WEEKDAYS[solarDay.getDay()],
+    holiday: holidayMap.get(toIsoDate(solarDay)) ?? null,
     isToday: isSameDate(solarDay, today),
   })
 
