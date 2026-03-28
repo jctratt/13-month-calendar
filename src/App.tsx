@@ -226,21 +226,35 @@ function App() {
       <section ref={topRef} className="hero-panel">
         <div className="hero-panel__copy">
           <p className="eyebrow">13-Month Lunar-Solar Calendar</p>
-          <h1>Equal months, real dates, no fake rewrites.</h1>
-          <p className="hero-panel__lede">
-            The regular year is remapped into thirteen fixed 28-day months. Real Gregorian
-            dates stay visible on every tile. Feb 29 stays inside the running sequence, while
-            Dec 31 always remains outside the grid and Dec 30 joins it in leap years. Each
-            fixed month starts in the first box, while the weekday strip rotates to match the
-            real weekday of Jan 1 for that year.
-          </p>
+          <h1>13 equal months.<br />Every date real.</h1>
+          <div className="hero-panel__lede">
+            <p>
+              <strong>How it Works</strong>
+              <br />
+              The regular year is remapped into thirteen fixed 28-day months, creating a
+              perpetual cycle where every month behaves identically and contains exactly
+              four full weeks. To maintain alignment with the solar year without
+              disrupting the Gregorian flow, December 31 always remains outside the 28-day
+              grid as a "Year Day," and December 30 joins it during leap years. This
+              placement ensures that February 29 stays within the running sequence of the
+              28-day months, preventing mid-year shifts.
+            </p>
+            <p>
+              Because the original Gregorian dates remain visible on every tile, you can
+              navigate this cleaner, more rhythmic 28-day grid for personal planning while
+              staying perfectly synchronized with global deadlines, holidays, and
+              appointments.
+            </p>
+          </div>
           <p className="hero-panel__holiday-note">
-            Common U.S. holidays are lightly highlighted on their real Gregorian dates.
+            Common U.S. holidays are highlighted on their real Gregorian dates so nothing
+            familiar gets lost in the new structure.
           </p>
           <div className="hero-panel__note" aria-label="Weekday orientation note">
-            Weekday columns shift year to year. In this layout, Jan 1 always starts in the
-            first box, so the weekday row rotates with the selected year instead of staying
-            in the usual Sunday-to-Saturday order.
+            One deliberate difference: weekday columns shift year to year because Jan 1
+            always anchors the first tile. The weekday strip rotates with each year rather
+            than locking to the usual Sunday-to-Saturday order — so the pattern you see
+            is always true to the real week.
           </div>
         </div>
 
