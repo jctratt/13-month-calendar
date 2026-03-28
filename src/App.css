@@ -55,6 +55,10 @@
   font-size: 0.92rem;
 }
 
+.hero-panel__lede p + p {
+  margin-top: 1rem;
+}
+
 .hero-panel__controls {
   display: grid;
   gap: 1rem;
