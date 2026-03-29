@@ -46,6 +46,17 @@ export interface FixedCalendarYear {
   specialDays: SpecialDay[]
 }
 
+export type CalendarEntry =
+  | {
+      kind: 'fixed-day'
+      month: FixedMonth
+      day: FixedDay
+    }
+  | {
+      kind: 'special-day'
+      day: SpecialDay
+    }
+
 const GREGORIAN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -61,7 +72,7 @@ function isSameDate(left: Date, right: Date) {
   )
 }
 
-function toIsoDate(date: Date) {
+export function toIsoDate(date: Date) {
   const month = `${date.getMonth() + 1}`.padStart(2, '0')
   const day = `${date.getDate()}`.padStart(2, '0')
 
@@ -269,4 +280,56 @@ export function findTodayPlacement(calendarYear: FixedCalendarYear) {
   }
 
   return null
+}
+
+export function parseIsoDate(isoDate: string) {
+  const [year, month, day] = isoDate.split('-').map(Number)
+
+  return new Date(year, month - 1, day)
+}
+
+export function getCalendarEntryForIsoDate(
+  calendarYear: FixedCalendarYear,
+  isoDate: string,
+): CalendarEntry | null {
+  for (const month of calendarYear.months) {
+    const day = month.days.find((entry) => entry.isoDate === isoDate)
+
+    if (day) {
+      return {
+        kind: 'fixed-day',
+        month,
+        day,
+      }
+    }
+  }
+
+  const specialDay = calendarYear.specialDays.find((entry) => entry.isoDate === isoDate)
+
+  if (specialDay) {
+    return {
+      kind: 'special-day',
+      day: specialDay,
+    }
+  }
+
+  return null
+}
+
+export function getFixedMonthForIsoDate(calendarYear: FixedCalendarYear, isoDate: string) {
+  const entry = getCalendarEntryForIsoDate(calendarYear, isoDate)
+
+  return entry?.kind === 'fixed-day' ? entry.month : null
+}
+
+export function getFixedWeekForIsoDate(calendarYear: FixedCalendarYear, isoDate: string) {
+  const entry = getCalendarEntryForIsoDate(calendarYear, isoDate)
+
+  if (!entry || entry.kind !== 'fixed-day') {
+    return null
+  }
+
+  const start = Math.floor((entry.day.fixedDay - 1) / 7) * 7
+
+  return entry.month.days.slice(start, start + 7)
 }
