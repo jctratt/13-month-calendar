@@ -787,6 +787,45 @@ function App() {
 
   return (
     <main className="app-shell">
+      <section className="intro-card" aria-labelledby="app-intro-title">
+        <div className="intro-card__header">
+          <p className="eyebrow">13-Month Lunar-Solar Calendar</p>
+          <h1 id="app-intro-title">13 equal months. Every date real.</h1>
+        </div>
+
+        <div className="intro-card__body">
+          <div>
+            <h2>How it Works</h2>
+            <p>
+              The regular year is remapped into thirteen fixed 28-day months, creating a
+              perpetual cycle where every month behaves identically and contains exactly four full
+              weeks. To maintain alignment with the solar year without disrupting the Gregorian
+              flow, December 31 always remains outside the 28-day grid as a &quot;Year Day,&quot; and
+              December 30 joins it during leap years. This placement ensures that February 29
+              stays within the running sequence of the 28-day months, preventing mid-year shifts.
+            </p>
+            <p>
+              Because the original Gregorian dates remain visible on every tile, you can navigate
+              this cleaner, more rhythmic 28-day grid for personal planning while staying
+              perfectly synchronized with global deadlines, holidays, and appointments.
+            </p>
+          </div>
+
+          <div className="intro-card__notes">
+            <p>
+              Common U.S. holidays are highlighted on their real Gregorian dates so nothing
+              familiar gets lost in the new structure.
+            </p>
+            <p>
+              One deliberate difference: weekday columns shift year to year because Jan 1 always
+              anchors the first tile. The weekday strip rotates with each year rather than locking
+              to the usual Sunday-to-Saturday order, so the pattern you see is always true to the
+              real week.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <div className="sticky-stack">
         <section ref={toolbarRef} className="floating-toolbar" aria-label="Calendar controls">
           <div className="floating-toolbar__controls">
